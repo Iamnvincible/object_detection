@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 from torchvision.datasets.vision import VisionDataset
+import torch
 
 
 class Carpk(VisionDataset):
@@ -39,10 +40,10 @@ class Carpk(VisionDataset):
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         target = self.parse_carpk_txt(self.annotations[index])
-        target['annotation']['filename'] = self.images[index]
+        #target['annotation']['filename'] = self.images[index]
         if self.transforms is not None:
             img, target = self.transforms(img, target)
-        return img, target
+        return img, target['annotation']
 
     def __len__(self):
         return len(self.images)
@@ -55,15 +56,23 @@ class Carpk(VisionDataset):
             targets = [x.strip() for x in f.readlines()]
         for item in targets:
             ordinates = item.split(' ')
-            obj_dict = {}
-            obj_dict['bndbox'] = {}
-            obj_dict['bndbox']['xmin'] = ordinates[0]
-            obj_dict['bndbox']['ymin'] = ordinates[1]
-            obj_dict['bndbox']['xmax'] = ordinates[2]
-            obj_dict['bndbox']['ymax'] = ordinates[3]
-            obj_dict['name'] = ordinates[4]
-            objects.append(obj_dict)
-        car_dict['annotation']['object'] = objects
+            vocformat = False
+            if vocformat:
+                obj_dict = {}
+                obj_dict['bndbox'] = {}
+                obj_dict['bndbox']['xmin'] = ordinates[0]
+                obj_dict['bndbox']['ymin'] = ordinates[1]
+                obj_dict['bndbox']['xmax'] = ordinates[2]
+                obj_dict['bndbox']['ymax'] = ordinates[3]
+                obj_dict['name'] = ordinates[4]
+                objects.append(obj_dict)
+            else:
+                objects.append([int(ordinates[0]), int(ordinates[1]),
+                                int(ordinates[2]), int(ordinates[3])])
+
+        car_dict['annotation']['boxes'] = torch.Tensor(objects)
+        car_dict['annotation']['labels'] = torch.ones(
+            (len(objects,)), dtype=torch.int64)
         return car_dict
 
 

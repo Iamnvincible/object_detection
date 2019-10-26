@@ -40,7 +40,7 @@ class Carpk(VisionDataset):
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         target = self.parse_carpk_txt(self.annotations[index])
-        target['annotation']['image_id']=torch.tensor([index])
+        target['annotation']['image_id'] = torch.tensor([index])
         #target['annotation']['filename'] = self.images[index]
         if self.transforms is not None:
             img, target = self.transforms(img, target)
@@ -75,8 +75,10 @@ class Carpk(VisionDataset):
         car_dict['annotation']['labels'] = torch.ones(
             (len(objects,)), dtype=torch.int64)
         boxes = car_dict['annotation']['boxes']
-        car_dict['annotation']['area']=(boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-        car_dict['annotation']['iscrowd']=torch.zeros((len(objects,)), dtype=torch.int64)
+        car_dict['annotation']['area'] = (
+            boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        car_dict['annotation']['iscrowd'] = torch.zeros(
+            (len(objects,)), dtype=torch.int64)
 
         return car_dict
 

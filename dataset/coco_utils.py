@@ -151,16 +151,20 @@ def convert_to_coco_api(ds):
     for img_idx in range(len(ds)):
         # find better way to get target
         # targets = ds.get_annotations(img_idx)
+        # img是图像，targets是若干目标
         img, targets = ds[img_idx]
+        #描述图像信息，id，长宽
         image_id = targets["image_id"].item()
         img_dict = {}
         img_dict['id'] = image_id
         img_dict['height'] = img.shape[-2]
         img_dict['width'] = img.shape[-1]
         dataset['images'].append(img_dict)
+        #bbox信息
         bboxes = targets["boxes"]
-        bboxes[:, 2:] -= bboxes[:, :2]
+        bboxes[:, 2:] -= bboxes[:, :2]#？
         bboxes = bboxes.tolist()
+        #标签，面积，是否拥挤
         labels = targets['labels'].tolist()
         areas = targets['area'].tolist()
         iscrowd = targets['iscrowd'].tolist()

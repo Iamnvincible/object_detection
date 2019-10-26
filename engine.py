@@ -11,10 +11,12 @@ import utils
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
+    #将模型设为训练模式
     model.train()
+    #拼接日志字符串
     metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('lr', utils.SmoothedValue(
-        window_size=1, fmt='{value:.6f}'))
+    metric_logger.add_meter(
+        'lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
 
     lr_scheduler = None
@@ -22,10 +24,12 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
         warmup_factor = 1. / 1000
         warmup_iters = min(1000, len(data_loader) - 1)
 
-        lr_scheduler = utils.warmup_lr_scheduler(
-            optimizer, warmup_iters, warmup_factor)
+        lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters,
+                                                 warmup_factor)
 
-    for images, targets in metric_logger.log_every(data_loader, print_freq, header):
+    # data_loader返回元组（图像，坐标）
+    for images, targets in metric_logger.log_every(data_loader, print_freq,
+                                                   header):
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
@@ -44,8 +48,11 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
             print(loss_dict_reduced)
             sys.exit(1)
 
+        #清除梯度缓存
         optimizer.zero_grad()
+        #反向传播
         losses.backward()
+        #更新参数
         optimizer.step()
 
         if lr_scheduler is not None:
@@ -62,17 +69,20 @@ def _get_iou_types(model):
     iou_types = ["bbox"]
     if isinstance(model_without_ddp, torchvision.models.detection.MaskRCNN):
         iou_types.append("segm")
-    if isinstance(model_without_ddp, torchvision.models.detection.KeypointRCNN):
+    if isinstance(model_without_ddp,
+                  torchvision.models.detection.KeypointRCNN):
         iou_types.append("keypoints")
     return iou_types
 
 
+#评估，求准确率
 @torch.no_grad()
 def evaluate(model, data_loader, device):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
     cpu_device = torch.device("cpu")
+    #将模型设置成评估模式
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -89,12 +99,14 @@ def evaluate(model, data_loader, device):
         model_time = time.time()
         outputs = model(image)
 
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()}
-                   for t in outputs]
+        outputs = [{k: v.to(cpu_device)
+                    for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
 
-        res = {target["image_id"].item(): output for target,
-               output in zip(targets, outputs)}
+        res = {
+            target["image_id"].item(): output
+            for target, output in zip(targets, outputs)
+        }
         evaluator_time = time.time()
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time

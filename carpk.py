@@ -18,7 +18,7 @@ class Carpk(VisionDataset):
                 and returns a transformed version.
     """
 
-    def __init__(self, root, image_set='train', transform=None, target_transform=None, transforms=None):
+    def __init__(self, root, image_set='train', transform=None, target_transform=None, transforms=None, imgformat='png'):
         super(Carpk, self).__init__(
             root, transforms, transform, target_transform)
         valid_sets = ["train", "test"]
@@ -32,7 +32,8 @@ class Carpk(VisionDataset):
 
         with open(os.path.join(split_f), "r") as f:
             file_names = [x.strip() for x in f.readlines()]
-        self.images = [os.path.join(image_dir, x+".png") for x in file_names]
+        self.images = [os.path.join(image_dir, x+"."+imgformat)
+                       for x in file_names]
         self.annotations = [os.path.join(
             annotation_dir, x+".txt") for x in file_names]
         assert(len(self.images) == len(self.annotations))

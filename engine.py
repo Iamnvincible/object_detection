@@ -11,9 +11,9 @@ import utils
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
-    #将模型设为训练模式
+    # 将模型设为训练模式
     model.train()
-    #拼接日志字符串
+    # 拼接日志字符串
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter(
         'lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -30,8 +30,10 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
     # data_loader返回元组（图像，坐标）
     for images, targets in metric_logger.log_every(data_loader, print_freq,
                                                    header):
-        images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        # images = list(image.to(device) for image in images)
+        # targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        images = list(image.cuda() for image in images)
+        targets = [{k: v.cuda() for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
 
@@ -48,11 +50,11 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
             print(loss_dict_reduced)
             sys.exit(1)
 
-        #清除梯度缓存
+        # 清除梯度缓存
         optimizer.zero_grad()
-        #反向传播
+        # 反向传播
         losses.backward()
-        #更新参数
+        # 更新参数
         optimizer.step()
 
         if lr_scheduler is not None:
@@ -75,14 +77,14 @@ def _get_iou_types(model):
     return iou_types
 
 
-#评估，求准确率
+# 评估，求准确率
 @torch.no_grad()
 def evaluate(model, data_loader, device):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
     cpu_device = torch.device("cpu")
-    #将模型设置成评估模式
+    # 将模型设置成评估模式
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'

@@ -30,10 +30,10 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
     # data_loader返回元组（图像，坐标）
     for images, targets in metric_logger.log_every(data_loader, print_freq,
                                                    header):
-        # images = list(image.to(device) for image in images)
-        # targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-        images = list(image.cuda() for image in images)
-        targets = [{k: v.cuda() for k, v in t.items()} for t in targets]
+        images = list(image.to(device) for image in images)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        # images = list(image.cuda() for image in images)
+        # targets = [{k: v.cuda() for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
 

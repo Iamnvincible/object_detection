@@ -60,7 +60,7 @@ if torch.cuda.device_count() > 1:
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     # 将模型分布到所有GPU上
     model = nn.DataParallel(model)
-
+#模型必须在gpu0上
 model.to(device)
 # 训练
 for data in rand_loader:

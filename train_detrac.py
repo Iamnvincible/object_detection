@@ -9,6 +9,12 @@ import datetime
 from engine import train_one_epoch, evaluate
 import utils
 import torch.nn as nn
+from torch.utils.data.distributed import DistributedSampler
+# 1) 初始化
+torch.distributed.init_process_group(backend="nccl")
+local_rank = torch.distributed.get_rank()
+torch.cuda.set_device(local_rank)
+device = torch.device("cuda", local_rank)
 
 root_dir = '/alihome/zrg/linjie/dataset'
 
@@ -21,6 +27,9 @@ data_loader = DataLoader(carpklotdataset,
                          shuffle=True,
                          num_workers=2,
                          collate_fn=utils.collate_fn)
+rand_loader = DataLoader(dataset=carpklotdataset,
+                         batch_size=8,
+                         sampler=DistributedSampler(carpklotdataset))
 carpklotdataset_test = Detrac(root_dir,
                               'test',
                               transform=transforms.Compose(
@@ -46,10 +55,15 @@ if is_resume and resume_path:
     model.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-model = nn.DataParallel(model)  # multi-GPU
-#model = model.cuda()
-device = torch.device("cuda:0")
 model.to(device)
+print("Let's use", torch.cuda.device_count(), "GPUs!")
+model = torch.nn.parallel.DistributedDataParallel(model,
+                                                  device_ids=[local_rank],
+                                                  output_device=local_rank)
+# model = model.cuda()
+# model = nn.DataParallel(model)  # multi-GPU
+# device = torch.device("cuda:0")
+# model.to(device)
 # Training
 print('Start training')
 start_time = time.time()

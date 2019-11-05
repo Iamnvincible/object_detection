@@ -1,35 +1,28 @@
 import torch
+import torch.nn as nn
 import torchvision
-from detrac import Detrac
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import time
 import os
 import datetime
+#当前目录下的库
 from engine import train_one_epoch, evaluate
 import utils
-import torch.nn as nn
-from torch.utils.data.distributed import DistributedSampler
-# 1) 初始化
-torch.distributed.init_process_group(backend="nccl")
-local_rank = torch.distributed.get_rank()
-torch.cuda.set_device(local_rank)
-device = torch.device("cuda", local_rank)
+from detrac import Detrac
 
 root_dir = '/alihome/zrg/linjie/dataset'
-
+batch_size = 8
 carpklotdataset = Detrac(root_dir,
                          'train',
                          transform=transforms.Compose([transforms.ToTensor()]),
                          imgformat="jpg")
 data_loader = DataLoader(carpklotdataset,
-                         batch_size=8,
+                         batch_size=batch_size,
                          shuffle=True,
                          num_workers=2,
                          collate_fn=utils.collate_fn)
-rand_loader = DataLoader(dataset=carpklotdataset,
-                         batch_size=8,
-                         sampler=DistributedSampler(carpklotdataset))
+
 carpklotdataset_test = Detrac(root_dir,
                               'test',
                               transform=transforms.Compose(
@@ -47,7 +40,7 @@ optimizer = torch.optim.SGD(params, lr=0.02, momentum=0.9, weight_decay=1e-4)
 lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                                                     milestones=[8, 11],
                                                     gamma=0.1)
-is_resume = True
+is_resume = False
 resume_path = None
 if is_resume and resume_path:
     print('Resume training')
@@ -55,15 +48,9 @@ if is_resume and resume_path:
     model.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+
+device = torch.device("cuda:0")
 model.to(device)
-print("Let's use", torch.cuda.device_count(), "GPUs!")
-model = torch.nn.parallel.DistributedDataParallel(model,
-                                                  device_ids=[local_rank],
-                                                  output_device=local_rank)
-# model = model.cuda()
-# model = nn.DataParallel(model)  # multi-GPU
-# device = torch.device("cuda:0")
-# model.to(device)
 # Training
 print('Start training')
 start_time = time.time()

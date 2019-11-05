@@ -23,10 +23,15 @@ class Detrac(VisionDataset):
             transforms (callable, optional): A function/transform that takes input sample and its target as entry
                 and returns a transformed version.
     """
-
-    def __init__(self, root, image_set='train', transform=None, target_transform=None, transforms=None, imgformat='png'):
-        super(Detrac, self).__init__(
-            root, transforms, transform, target_transform)
+    def __init__(self,
+                 root,
+                 image_set='train',
+                 transform=None,
+                 target_transform=None,
+                 transforms=None,
+                 imgformat='png'):
+        super(Detrac, self).__init__(root, transforms, transform,
+                                     target_transform)
         valid_sets = ["train", "test"]
         base_dir = os.path.join(self.root, "")
         image_dir = os.path.join(base_dir, "JPEGImages")
@@ -34,15 +39,17 @@ class Detrac(VisionDataset):
         if not os.path.isdir(base_dir):
             raise RuntimeError('Dataset not found or corrupted.')
         splits_dir = os.path.join(base_dir, 'ImageSets')
-        split_f = os.path.join(splits_dir, image_set.rstrip('\n')+'.txt')
+        split_f = os.path.join(splits_dir, image_set.rstrip('\n') + '.txt')
 
         with open(os.path.join(split_f), "r") as f:
             file_names = [x.strip() for x in f.readlines()]
-        self.images = [os.path.join(image_dir, x+"."+imgformat)
-                       for x in file_names]
-        self.annotations = [os.path.join(
-            annotation_dir, x+".xml") for x in file_names]
-        assert(len(self.images) == len(self.annotations))
+        self.images = [
+            os.path.join(image_dir, x + "." + imgformat) for x in file_names
+        ]
+        self.annotations = [
+            os.path.join(annotation_dir, x + ".xml") for x in file_names
+        ]
+        assert (len(self.images) == len(self.annotations))
 
     def __getitem__(self, index):
         """
@@ -58,8 +65,11 @@ class Detrac(VisionDataset):
         target = self.voc2coco(target)
         target['image_id'] = torch.tensor([index])
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
-
+            img,target = self.transforms(img,target)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        if self.transform is not None:
+            img = self.transform(img)
         return img, target
 
     def __len__(self):
@@ -74,9 +84,10 @@ class Detrac(VisionDataset):
                 for ind, v in dc.items():
                     def_dic[ind].append(v)
             voc_dict = {
-                node.tag:
-                    {ind: v[0] if len(v) == 1 else v
-                     for ind, v in def_dic.items()}
+                node.tag: {
+                    ind: v[0] if len(v) == 1 else v
+                    for ind, v in def_dic.items()
+                }
             }
         if node.text:
             text = node.text.strip()
@@ -105,10 +116,9 @@ class Detrac(VisionDataset):
         coco_dict['boxes'] = torch.Tensor(boxes)
         coco_dict['labels'] = torch.LongTensor(names)
         tboxes = coco_dict['boxes']
-        coco_dict['area'] = (
-            tboxes[:, 3] - tboxes[:, 1]) * (tboxes[:, 2] - tboxes[:, 0])
-        coco_dict['iscrowd'] = torch.zeros(
-            (len(boxes,)), dtype=torch.int64)
+        coco_dict['area'] = (tboxes[:, 3] - tboxes[:, 1]) * (tboxes[:, 2] -
+                                                             tboxes[:, 0])
+        coco_dict['iscrowd'] = torch.zeros((len(boxes, )), dtype=torch.int64)
         return coco_dict
 
 

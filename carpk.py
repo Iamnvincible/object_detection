@@ -17,10 +17,15 @@ class Carpk(VisionDataset):
             transforms (callable, optional): A function/transform that takes input sample and its target as entry
                 and returns a transformed version.
     """
-
-    def __init__(self, root, image_set='train', transform=None, target_transform=None, transforms=None, imgformat='png'):
-        super(Carpk, self).__init__(
-            root, transforms, transform, target_transform)
+    def __init__(self,
+                 root,
+                 image_set='train',
+                 transform=None,
+                 target_transform=None,
+                 transforms=None,
+                 imgformat='png'):
+        super(Carpk, self).__init__(root, transforms, transform,
+                                    target_transform)
         valid_sets = ["train", "test"]
         base_dir = os.path.join(self.root, "data")
         image_dir = os.path.join(base_dir, "Images")
@@ -28,24 +33,31 @@ class Carpk(VisionDataset):
         if not os.path.isdir(base_dir):
             raise RuntimeError('Dataset not found or corrupted.')
         splits_dir = os.path.join(base_dir, 'ImageSets')
-        split_f = os.path.join(splits_dir, image_set.rstrip('\n')+'.txt')
+        if image_set not in valid_sets:
+            image_set = 'test'
+        split_f = os.path.join(splits_dir, image_set.rstrip('\n') + '.txt')
 
         with open(os.path.join(split_f), "r") as f:
             file_names = [x.strip() for x in f.readlines()]
-        self.images = [os.path.join(image_dir, x+"."+imgformat)
-                       for x in file_names]
-        self.annotations = [os.path.join(
-            annotation_dir, x+".txt") for x in file_names]
-        assert(len(self.images) == len(self.annotations))
+        self.images = [
+            os.path.join(image_dir, x + "." + imgformat) for x in file_names
+        ]
+        self.annotations = [
+            os.path.join(annotation_dir, x + ".txt") for x in file_names
+        ]
+        assert (len(self.images) == len(self.annotations))
 
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         target = self.parse_carpk_txt(self.annotations[index])
         target['annotation']['image_id'] = torch.tensor([index])
-        #target['annotation']['filename'] = self.images[index]
         if self.transforms is not None:
             img, target = self.transforms(img, target)
-        return img, target['annotation']
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+        if self.transform is not None:
+            img = self.transform(img)
+        return img, target
 
     def __len__(self):
         return len(self.images)
@@ -69,17 +81,21 @@ class Carpk(VisionDataset):
                 obj_dict['name'] = ordinates[4]
                 objects.append(obj_dict)
             else:
-                objects.append([int(ordinates[0]), int(ordinates[1]),
-                                int(ordinates[2]), int(ordinates[3])])
+                objects.append([
+                    int(ordinates[0]),
+                    int(ordinates[1]),
+                    int(ordinates[2]),
+                    int(ordinates[3])
+                ])
 
         car_dict['annotation']['boxes'] = torch.Tensor(objects)
-        car_dict['annotation']['labels'] = torch.ones(
-            (len(objects,)), dtype=torch.int64)
+        car_dict['annotation']['labels'] = torch.ones((len(objects, )),
+                                                      dtype=torch.int64)
         boxes = car_dict['annotation']['boxes']
-        car_dict['annotation']['area'] = (
-            boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-        car_dict['annotation']['iscrowd'] = torch.zeros(
-            (len(objects,)), dtype=torch.int64)
+        car_dict['annotation']['area'] = (boxes[:, 3] - boxes[:, 1]) * (
+            boxes[:, 2] - boxes[:, 0])
+        car_dict['annotation']['iscrowd'] = torch.zeros((len(objects, )),
+                                                        dtype=torch.int64)
 
         return car_dict
 

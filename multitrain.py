@@ -28,6 +28,7 @@ from engine import train_one_epoch, evaluate
 import utils
 import dataset.transforms as T
 from detrac import Detrac
+from DatasetUnion import DatasetUnion
 
 
 def get_dataset(name, image_set, transform, data_path):
@@ -45,13 +46,18 @@ def get_dataset(name, image_set, transform, data_path):
     # p, ds_fn, num_classes = paths[name]
 
     # ds = ds_fn(p, image_set=image_set, transforms=transform)
-    root_dir = '/alihome/zrg/linjie/dataset'
-    carpklotdataset = Detrac(root_dir,
-                             image_set,
-                             transforms=transform,
-                             imgformat="jpg")
+    detrac = '/alihome/zrg/linjie/dataset'
+    carpkt = '/alihome/zrg/linjie/dataset'
+    # carpklotdataset = Detrac(root_dir,
+    #                          image_set,
+    #                          transforms=transform,
+    #                          imgformat="jpg")
+    uniondataset = DatasetUnion([carpkt, detrac], ['carpk', 'detrac'],
+                                ['png', 'png'],
+                                image_set,
+                                transform=transform)
     num_classes = 5
-    return carpklotdataset, num_classes
+    return uniondataset, num_classes
 
 
 def get_transform(train):

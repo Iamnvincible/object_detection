@@ -46,14 +46,15 @@ def get_dataset(name, image_set, transform, data_path):
     # p, ds_fn, num_classes = paths[name]
 
     # ds = ds_fn(p, image_set=image_set, transforms=transform)
+    carpkt = '/alihome/zrg/linjie/datasets/CARPK_devkit'
+    pucpr = '/alihome/zrg/linjie/datasets/PUCPR+_devkit'
     detrac = '/alihome/zrg/linjie/dataset'
-    carpkt = '/alihome/zrg/linjie/dataset'
     # carpklotdataset = Detrac(root_dir,
     #                          image_set,
     #                          transforms=transform,
     #                          imgformat="jpg")
-    uniondataset = DatasetUnion([carpkt, detrac], ['carpk', 'detrac'],
-                                ['png', 'png'],
+    uniondataset = DatasetUnion([carpkt, pucpr, detrac], ['carpk', 'pucpr', 'detrac'],
+                                ['png', 'jpg', 'png'],
                                 image_set,
                                 transform=transform)
     num_classes = 5
@@ -119,7 +120,7 @@ def main(args):
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
         num_classes=5, pretrained=False)
 
-    #model = torchvision.models.detection.__dict__[args.model](
+    # model = torchvision.models.detection.__dict__[args.model](
     #    num_classes=num_classes, pretrained=args.pretrained)
     model.to(device)
 

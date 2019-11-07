@@ -18,7 +18,7 @@ class DatasetUnion(VisionDataset):
                          target_transform=target_transform)
         self.images = []
         self.annotations = []
-        datasets = ['carpk', 'detrac']
+        datasets = ['carpk', 'pucpr', 'detrac']
         image_sets = ['train', 'val', 'test']
         for index, imgformation in enumerate(setformations):
             if imgformation in datasets:
@@ -27,13 +27,19 @@ class DatasetUnion(VisionDataset):
                                        target_transform, transforms,
                                        imgformats[index])
                 if imgformation == datasets[1]:
+                    self.pucpr = Carpk(roots[index], image_set, transform,
+                                       target_transform, transforms,
+                                       imgformats[index])
+                if imgformation == datasets[2]:
                     self.detrac = Detrac(roots[index], image_set, transform,
                                          target_transform, transforms,
                                          imgformats[index])
         if self.carpk:
-            self.images.append(carpk.images)
+            self.images.append(self.carpk.images)
+        if self.pucpr:
+            self.images.append(self.pucpr.images)
         if self.detrac:
-            self.images.append(detrac.images)
+            self.images.append(self.detrac.images)
 
     def __len__(self):
         return len(self.images)

@@ -23,6 +23,7 @@ class Detrac(VisionDataset):
             transforms (callable, optional): A function/transform that takes input sample and its target as entry
                 and returns a transformed version.
     """
+
     def __init__(self,
                  root,
                  image_set='train',
@@ -65,7 +66,7 @@ class Detrac(VisionDataset):
         target = self.voc2coco(target)
         target['image_id'] = torch.tensor([index])
         if self.transforms is not None:
-            img,target = self.transforms(img,target)
+            img, target = self.transforms(img, target)
         if self.target_transform is not None:
             target = self.target_transform(target)
         if self.transform is not None:
